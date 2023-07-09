@@ -1,0 +1,33 @@
+name: Deploy AWS Demo App
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Generate build number
+        id: buildnumber
+        uses: einaregilsson/build-number@v3
+        with:
+          token: ${{secrets.GIT_TOKEN}}
+
+      - name: Generate deployment package
+        run: npm run generate-zip
+
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: DemoApp
+          environment_name: DemoApp-env
+          version_label: DemoApp-${{ steps.buildnumber.outputs.build_number }}
+          existing_bucket_name: elasticbeanstalk-ap-southeast-1-475962794699
+          region: ap-southeast-1
+          deployment_package: deploy.zip
